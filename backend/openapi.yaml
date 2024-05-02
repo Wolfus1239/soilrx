@@ -1,0 +1,732 @@
+openapi: 3.0.3
+info:
+  title: SoilRX
+  version: 1.0.0
+servers:
+  - url: https://soilrx.abdrashitov-academy.ru/api
+    description: DevServer
+  - url: http://localhost/api
+    description: Local
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      summary: Получение токена
+      description: Получение токена
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/login'
+      responses:
+        '200':
+          description: Токен авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_response'
+        '401':
+          description: Пользовател не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401'
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Выход из аккаунта
+      description: Выход из аккаунта
+      tags:
+        - auth
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Выход из аккаунта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/logout_response'
+        '403':
+          description: Электронная почта не верифицирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/403'
+        '401':
+          description: Пользовател не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401'
+  /auth/me:
+    post:
+      operationId: Об аккаунте
+      summary: Об аккаунте
+      description: Информации об аккаунте
+      tags:
+        - auth
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Информации об аккаунте
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/me'
+        '403':
+          description: Электронная почта не верифицирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/403'
+        '401':
+          description: Пользовател не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401'
+  /auth/refresh:
+    post:
+      operationId: Обновление токена
+      summary: Обновление токена
+      description: Обновление токена. Обновление происходит с помощью текущего токена. В токен вшит iat( время создание токена, то есть это время обезателбно должно быть до текущего момента времени), nbf( время последнего обновления), exp( время показывающее окончание работы токена). Для обновление токена iat и nbf должны быть в прошедшем времени, а exp еще в будущем.
+      tags:
+        - auth
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Выход из аккаунта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_response'
+  /email/verify/{id}:
+    get:
+      summary: Verify user's email
+      description: Verify user's email address using the verification token
+      operationId: verifyUserEmail
+      parameters:
+        - name: id
+          in: path
+          description: User's ID for email verification
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Email successfully verified
+        '404':
+          description: User not found or token invalid
+      security: []
+  /resend-mail-verify:
+    post:
+      summary: Resend email verification
+      description: Resend verification email to the user
+      operationId: resendEmailVerification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email
+              required:
+                - email
+      responses:
+        '200':
+          description: Email verification link has been resent to the user's email
+        '400':
+          description: Email not found or already verified
+      security: []
+  /register:
+    post:
+      summary: Register a new user
+      description: Create a new user with the provided details
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '200':
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_response'
+  /forgot-password:
+    post:
+      operationId: forgot-password
+      summary: Восстановление пароля
+      description: Восстановление пароля
+      tags:
+        - forgot-password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+      responses:
+        '200':
+          description: Восстановление пароля
+          content:
+            application/json:
+              schema:
+                type: object
+  /reset-password:
+    post:
+      operationId: reset-password
+      summary: Смена пароля
+      description: Смена пароля
+      tags:
+        - reset-password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Смена пароля
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                message: registration successful
+        '422':
+          description: Invalid input or validation error
+          content:
+            application/json:
+              example:
+                message: Password mismatch
+      security: [ ]
+  /fields:
+    post:
+      operationId: Создание поле
+      summary: Создание поле
+      description: Создание поле
+      tags:
+        - field
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/fields'
+      responses:
+        '201':
+          description: Поле создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/field_created_201'
+        '500':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500'
+        '403':
+          description: Электронная почта не верифицирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/403'
+        '401':
+          description: Пользовател не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401'
+  /fields/{field_id}:
+    get:
+      operationId: Получение данных определенного поля
+      summary: Получение данных определенного поля
+      description: Получение данных определенного поля
+      tags:
+        - field
+      parameters:
+        - in: path
+          name: field_id
+          required: true
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Данные поле
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/field_created_201'
+        '500':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500'
+        '403':
+          description: Электронная почта не верифицирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/403'
+        '401':
+          description: Пользовател не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401'
+  /fields/{id_field}:
+    patch:
+      operationId: Обновление данных определенного поле
+      summary: Обновление данных определенного поле
+      description: Обновление данных определенного поле
+      tags:
+        - field
+      parameters:
+        - in: path
+          name: id_field
+          required: true
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/fields'
+      responses:
+        '200':
+          description: Данные обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/field_created_201'
+        '500':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500'
+        '403':
+          description: Электронная почта не верифицирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/403'
+        '401':
+          description: Пользовател не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401'
+  /fields/{id}:
+    delete:
+      operationId: Удаление данных поля
+      summary: Удаление данных поля
+      description: Удаление данных поля
+      tags:
+        - field
+      parameters:
+        - in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Данные удалены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/field_created_201'
+        '500':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500'
+        '403':
+          description: Электронная почта не верифицирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/403'
+        '401':
+          description: Пользовател не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401'
+  /get-fields:
+    get:
+      operationId: Получение списка всех полей
+      summary: Получение списка всех полей
+      description: Получение списка всех полей
+      tags:
+        - field
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Получение списка всех полей
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/field_created_201'
+        '500':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500'
+        '403':
+          description: Электронная почта не верифицирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/403'
+        '401':
+          description: Пользовател не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401'
+  /get-plots-number/{id}:
+    get:
+      operationId: Получение количества участков
+      summary: Получение количества участков
+      description: Получение количества участков
+      tags:
+        - field
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+      responses:
+        '200':
+          description: Количество участков
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/field_created_201'
+  /plots/add:
+    post:
+      operationId: Добавление участка
+      summary: Добавление участка
+      description: Добавление участка
+      tags:
+        - plot
+      parameters:
+        - in: path
+          name: id_field
+          required: true
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/plots'
+      responses:
+        '200':
+          description: Участок добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/plot_created_201'
+  /plots/delete/{id}:
+    delete:
+      operationId: Удаление участка
+      summary: Удаление участка
+      description: Удаление участка
+      tags:
+        - plot
+      parameters:
+        - in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Участок удален
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/plot_created_201'
+  /plots/edit/{id}:
+    put:
+      operationId: Редактирование участка
+      summary: Редактирование участка
+      description: Редактирование участка
+      tags:
+        - plot
+      parameters:
+        - in: path
+          name: id
+          required: true
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/plots'
+      responses:
+        '200':
+          description: Участок отредактирован
+  /plots/get{id}:
+    get:
+      operationId: Получение определенного участка
+      summary: Получение определенного участков
+      description: Получение определенного участков
+      tags:
+        - plot
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Получение списка всех участков
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/plot_created_201'
+  /plots/get-all:
+    get:
+      operationId: Получение списка всех участков
+      summary: Получение списка всех участков
+      description: Получение списка всех участков
+      tags:
+        - plot
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Получение списка всех участков
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/plot_created_201'
+  /upload-pdf/{id}:
+    post:
+      operationId: Загрузка pdf
+      summary: Загрузка pdf
+      description: Загрузка pdf
+      tags:
+        - plot
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/upload_pdf'
+      responses:
+        '200':
+          description: Загрузка pdf
+          content:
+  /soil-types:
+    get:
+      operationId: Получение списка всех типов почв
+      summary: Получение списка всех типов почв
+      description: Получение списка всех типов почв
+      tags:
+        - soil-type
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Получение списка всех типов почв
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/soil-type_created_201'
+  /ml-predict-fertile/{id}:
+    get:
+      operationId: Предсказание почвы
+      summary: Предсказание почвы
+      description: Предсказание почвы
+      tags:
+        - predict
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/predict'
+      responses:
+        '200':
+          description: Предсказание
+    /ml-analysis/{id}:
+      get:
+        operationId: Анализ почвы
+        summary: Анализ почвы
+        description: Анализ почвы
+        tags:
+          - predict
+        security:
+          - bearerAuth: [ ]
+        parameters:
+          - in: path
+            name: id
+            required: true
+        responses:
+          '200':
+            description: Анализ почвы
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/predict'
+    /ml-top-recommend/{id}:
+      get:
+        operationId: Топ рекомендации
+        summary: Топ рекомендации
+        description: Топ рекомендации
+        tags:
+          - predict
+        security:
+          - bearerAuth: [ ]
+        parameters:
+          - in: path
+            name: id
+            required: true
+        responses:
+          '200':
+            description: Топ рекомендации
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/predict'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    login:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    login_response:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+    logout_response:
+      type: object
+      properties:
+        message:
+          type: string
+    me:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+
+    UserRegistration:
+      type: object
+      properties:
+        name:
+          type: string
+          description: User's name
+    email:
+      type: string
+      format: email
+      description: User's email
+    password:
+      type: string
+      description: User's password
+    password_confirmation:
+      type: string
+    fields:
+      type: object
+      properties:
+        name:
+          type: string
+          required: true
+        cadastre_number:
+          type: string
+          required: true
+        size:
+          type: number
+          multipleOf: 0.1
+          required: true
+    field_created_201:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            cadastre_number:
+              type: string
+            size:
+              type: string
+    field_delete_200:
+      type: object
+      properties:
+        message:
+          type: integer
+          description: Delete
+    500:
+      type: object
+      properties:
+        error:
+          type: string
+    403:
+      type: object
+      properties:
+        error:
+          type: string
+    401:
+      type: object
+      properties:
+        error:
+          type: string
+security:
+  - ApiTokenAuth: [ ]
